@@ -43,6 +43,7 @@ Please also see https://github.com/helm/chartmuseum
       - [Extra Paths](#extra-paths)
       - [Annotations](#annotations)
       - [Example Ingress configuration](#example-ingress-configuration)
+    - [Gateway API (HTTPRoute)](#gateway-api-httproute)
   - [Uninstall](#uninstall)
   - [Upgrading](#upgrading)
     - [To 3.0.0](#to-300)
@@ -223,6 +224,13 @@ their default values. See values.yaml for all available options.
 | `ingress.extraPaths[0].path`            | Path within the url structure.                                              | `<nil>`                              |
 | `ingress.extraPaths[0].service`         | The name of the service to route traffic to.                                | `<nil>`                              |
 | `ingress.extraPaths[0].port`            | The port of the service to route traffic to.                                | `<nil>`                              |
+| `httpRoute.enabled`                     | Enable Gateway API HTTPRoute resource                                       | `false`                              |
+| `httpRoute.apiVersion`                  | HTTPRoute API version                                                       | `gateway.networking.k8s.io/v1`       |
+| `httpRoute.annotations`                 | HTTPRoute annotations                                                       | `{}`                                 |
+| `httpRoute.labels`                      | HTTPRoute labels                                                            | `{}`                                 |
+| `httpRoute.parentRefs`                  | Gateways the route attaches to                                              | `[]`                                 |
+| `httpRoute.hostnames`                   | Hostnames for the route                                                     | `[]`                                 |
+| `httpRoute.rules`                       | Routing rules (`matches`, `filters`, `timeouts`, optional `backendRefs`)    | `PathPrefix /` to chartmuseum service |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to
 `helm install`.
@@ -782,6 +790,28 @@ helm install --name my-chartmuseum chartmuseum/chartmuseum \
   --set ingress.hosts[0].path=/ \
   --set ingress.hosts[0].tls=true \
   --set ingress.hosts[0].tlsSecret=chartmuseum.tls-secret
+```
+
+### Gateway API (HTTPRoute)
+
+As an alternative to Ingress, the chart can create a [Gateway API](https://gateway-api.sigs.k8s.io/) `HTTPRoute`. The Gateway API CRDs and a Gateway controller must be installed in the cluster, and a `Gateway` must already exist. TLS is terminated on the Gateway listener, not on the route.
+
+To enable it, set `httpRoute.enabled` to `true` and reference your Gateway in `httpRoute.parentRefs`. If a rule has no `backendRefs`, traffic is sent to the chartmuseum service.
+
+```yaml
+httpRoute:
+  enabled: true
+  parentRefs:
+    - name: my-gateway
+      namespace: gateway-system
+      sectionName: https
+  hostnames:
+    - chartmuseum.domain.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
 ```
 
 ## Uninstall

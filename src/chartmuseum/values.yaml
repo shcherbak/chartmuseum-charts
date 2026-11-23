@@ -5,7 +5,7 @@ strategy:
   type: RollingUpdate
 image:
   repository: ghcr.io/helm/chartmuseum
-  tag: v0.16.3
+  tag: v0.16.6
   pullPolicy: IfNotPresent
 secret:
   labels: {}
@@ -332,6 +332,37 @@ ingress:
   # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
   # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
   ingressClassName:
+
+## Gateway API HTTPRoute (alternative to Ingress)
+## Requires Gateway API CRDs and a Gateway controller installed in the cluster
+## See https://gateway-api.sigs.k8s.io/api-types/httproute/
+httpRoute:
+  enabled: false
+  apiVersion: gateway.networking.k8s.io/v1
+  ## HTTPRoute annotations
+  annotations: {}
+  ## HTTPRoute labels
+  labels: {}
+  ## Gateways this route attaches to
+  parentRefs: []
+    # - name: my-gateway
+    #   namespace: gateway-system
+    #   sectionName: https
+  ## Hostnames matching the HTTP Host header
+  hostnames: []
+    # - chartmuseum.domain.com
+  ## Routing rules. If backendRefs is omitted, the chartmuseum service is used.
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      # filters: []
+      # timeouts:
+      #   request: 300s
+      # backendRefs:
+      #   - name: chartmuseum
+      #     port: 8080
 
 # Adding secrets to tiller is not a great option, so If you want to use an existing
 # secret that contains the json file, you can use the following entries
